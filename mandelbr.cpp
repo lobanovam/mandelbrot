@@ -1,48 +1,52 @@
 #include "mandelbr.hpp"
 
 #define AVX 1
-#define DRAW 0 
+#define DRAW 1
 
 __m256 max_dist = _mm256_set1_ps (MAX_DISTANCE);
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(W_HEIGHT, W_WIDTH), "My window");
-    window.setFramerateLimit(30);
+    sf::RenderWindow window(sf::VideoMode(W_HEIGHT, W_WIDTH), "Mandelbrot");
+    //window.setFramerateLimit(30);
     float cent_x = 0.0, cent_y = 0.0;
 
     sf::Clock clock; // starts the clock
 
     sf::Font font;
-    font.loadFromFile("SEASRN__.ttf");
-    sf::Text cycle_text = *GenerateTextSprite (font, "Cycle time: ", 50, 50);
-    cycle_text.setCharacterSize (20);
-    cycle_text.setFillColor (sf::Color::Red);
+    font.loadFromFile("caviar-dreams.ttf");
+    sf::Text fps_text = *SetText (font, 0, 0);
+    sf::Text scroll_text = *SetText(font, (float) W_WIDTH - 250.f, 0);
+    float scrollScale = 1;
 
     while (window.isOpen()) {
 
         clock.restart();
 
-
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-            cent_x -= 0.1;
+            cent_x += 0.1 * scrollScale;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-            cent_x += 0.1;
+            cent_x -= 0.1 * scrollScale;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-            cent_y += 0.1;
+            cent_y -= 0.1 * scrollScale;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-            cent_y -= 0.1;
+            cent_y += 0.1 * scrollScale;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-            x_brdr -= 0.2;
-            y_brdr -= 0.2;
+            x_brdr *= 0.9;
+            y_brdr *= 0.9;
             dx = 2 * x_brdr / (float)W_WIDTH;
             dy = 2 * y_brdr / (float)W_HEIGHT;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-            x_brdr += 0.2;
-            y_brdr += 0.2;
+            x_brdr *= 1.2;
+            y_brdr *= 1.2;
             dx = 2 * x_brdr / (float)W_WIDTH;
             dy = 2 * y_brdr / (float)W_HEIGHT;
         }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+            scrollScale *= 1.25;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+            scrollScale *= 0.8;
+        
         
         
         sf::Event event;
@@ -51,8 +55,6 @@ int main() {
                 window.close();
         }
         
-       
-
         if (AVX)
             AVXDrawMandlbr(window, cent_x, cent_y);
         else
@@ -60,12 +62,17 @@ int main() {
         
         sf::Time elapsed_time = clock.getElapsedTime();
 
-        char text_buffer[100];
-        sprintf (text_buffer, "FPS: %f\n", 1/elapsed_time.asSeconds());
-        printf (text_buffer);
+        char textFPS[20];
+        sprintf (textFPS, "FPS: %.2f\n", 1/elapsed_time.asSeconds());
 
-        cycle_text.setString (text_buffer);
-        window.draw (cycle_text);
+        char textSCROLL[20];
+        sprintf (textSCROLL, "Scroll Scale: %.3f\n", scrollScale);
+        //printf(text);
+
+        fps_text.setString (textFPS);
+        scroll_text.setString(textSCROLL);
+        window.draw (fps_text);
+        window.draw(scroll_text);
 
         window.display();
 
@@ -176,13 +183,12 @@ void AVXDrawMandlbr(sf::RenderWindow &window, float center_x, float center_y) {
     }
 }
 
-sf::Text *GenerateTextSprite (sf::Font &font, char* content, float x_coord, float y_coord) {
+sf::Text *SetText (sf::Font &font, float x_coord, float y_coord) {
     sf::Text *text = new sf::Text;          
 
     text->setFont(font);
-    text->setFillColor(sf::Color::Red);
-    text->setString(content);
-    text->setCharacterSize(48);
+    text->setFillColor(sf::Color::Yellow);
+    text->setCharacterSize(30);
     text->setPosition(x_coord, y_coord);
 
     return text;
