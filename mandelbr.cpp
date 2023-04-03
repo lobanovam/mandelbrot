@@ -7,16 +7,23 @@ __m256 max_dist = _mm256_set1_ps (MAX_DISTANCE);
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(W_HEIGHT, W_WIDTH), "Mandelbrot");
-    //window.setFramerateLimit(30);
     float cent_x = 0.0, cent_y = 0.0;
 
-    sf::Clock clock; // starts the clock
-
+    sf::Clock clock;                               
     sf::Font font;
     font.loadFromFile("caviar-dreams.ttf");
     sf::Text fps_text = *SetText (font, 0, 0);
     sf::Text scroll_text = *SetText(font, (float) W_WIDTH - 250.f, 0);
     float scrollScale = 1;
+
+    sf::Image image;
+    image.create(W_WIDTH, W_HEIGHT, sf::Color::Black);
+
+    sf::Texture texture;
+    texture.loadFromImage(image);
+
+    sf::Sprite sprite;
+    sprite.setTexture(texture);
 
     while (window.isOpen()) {
 
@@ -47,8 +54,6 @@ int main() {
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
             scrollScale *= 0.8;
         
-        
-        
         sf::Event event;
         while (window.pollEvent(event)) {  
             if (event.type == sf::Event::Closed)
@@ -56,9 +61,9 @@ int main() {
         }
         
         if (AVX)
-            AVXDrawMandlbr(window, cent_x, cent_y);
+            AVXDrawMandlbr(image, cent_x, cent_y);
         else
-            DrawMandlbr(window, cent_x, cent_y);
+            DrawMandlbr(image, cent_x, cent_y);
         
         sf::Time elapsed_time = clock.getElapsedTime();
 
@@ -67,25 +72,26 @@ int main() {
 
         char textSCROLL[20];
         sprintf (textSCROLL, "Scroll Scale: %.3f\n", scrollScale);
-        //printf(text);
 
+        window.clear(sf::Color::Black);
+
+        texture.update(image);
         fps_text.setString (textFPS);
         scroll_text.setString(textSCROLL);
+
+        window.draw (sprite);
         window.draw (fps_text);
         window.draw(scroll_text);
 
         window.display();
-
-        window.clear(sf::Color::Black);
+   
     }
 
     return 0;
     
 }
 
-void DrawMandlbr(sf::RenderWindow &window, float center_x, float center_y) {
-    sf::RectangleShape Pixel = sf::RectangleShape(sf::Vector2f(1, 1));
-    Pixel.setFillColor(sf::Color::Black);
+void DrawMandlbr(sf::Image &image, float center_x, float center_y) {
     
     float y_min = -y_brdr - center_y, y_max = y_brdr - center_y;
     float x_min = -x_brdr - center_x, x_max = x_brdr - center_x;
@@ -109,18 +115,21 @@ void DrawMandlbr(sf::RenderWindow &window, float center_x, float center_y) {
                 y = xy + xy + y0;
             }
 
-            Pixel.setPosition(x0_pos, y0_pos);
-            Pixel.setFillColor(sf::Color::Black);
-            if (cur_iter < MAX_ITER)
-                Pixel.setFillColor(sf::Color{(BYTE)cur_iter * 5, (BYTE) cur_iter * 10, (BYTE) 255 - cur_iter});
+            if (DRAW) {
+                sf::Color color; 
+                if (cur_iter < MAX_ITER) {
+                    color = sf::Color((BYTE)cur_iter * 30, (BYTE) cur_iter * 5, (BYTE) 255 - cur_iter);
+                } else {
+                    color = sf::Color::Black;
+                }
 
-            if (DRAW)
-                window.draw(Pixel);
+                image.setPixel(x0_pos, y0_pos, color);
+            } 
         }
     }
 }
 
-void AVXDrawMandlbr(sf::RenderWindow &window, float center_x, float center_y) {
+void AVXDrawMandlbr(sf::Image &image, float center_x, float center_y) {
     __m256 x_shifts = _mm256_set_ps (7*dx, 6*dx, 5*dx, 4*dx, 3*dx, 2*dx, dx, 0);
     __m256 y_brdr_arr = _mm256_set1_ps (y_brdr);
     __m256 x_brdr_arr = _mm256_set1_ps (x_brdr);
@@ -128,7 +137,6 @@ void AVXDrawMandlbr(sf::RenderWindow &window, float center_x, float center_y) {
     __m256 y_scale = _mm256_set1_ps (1/dy);
     __m256 x_scale = _mm256_set1_ps (1/dx);
 
-    sf::RectangleShape Pixel = sf::RectangleShape(sf::Vector2f(1, 1));
     float y_min = -y_brdr - center_y, y_max = y_brdr - center_y;
     float x_min = -x_brdr - center_x, x_max = x_brdr - center_x;
 
@@ -154,10 +162,10 @@ void AVXDrawMandlbr(sf::RenderWindow &window, float center_x, float center_y) {
                 __m256 xy = _mm256_mul_ps(x, y);
 
                 __m256 dist = _mm256_add_ps(x2, y2);
-                __m256 mask = _mm256_cmp_ps(dist, max_dist, _CMP_LT_OQ); // (FFFFFFFF (= -1) if true, 0 if false)
+                __m256 mask = _mm256_cmp_ps(dist, max_dist, _CMP_LT_OQ);      // FFFFFFFF (= -1) if true, 0 if false
 
                 int res = _mm256_movemask_ps(mask);
-                if (!res)  break;                                        // all distances are out of range
+                if (!res)  break;                                             // all distances are out of range
            
                 cur_iters = _mm256_sub_epi32 (cur_iters, _mm256_castps_si256 (mask));   //cur_iter + 1 or cur_iter + 0
 
@@ -167,18 +175,20 @@ void AVXDrawMandlbr(sf::RenderWindow &window, float center_x, float center_y) {
              }
             
             float* x_cords = (float*) &x_pos;
-            float* y_cords = (float*) &y_pos;
+            float y_cord = * (float*) &y_pos;
             int* iters = (int*) &cur_iters;
-            for (int i = 0; i < 8; i++) {
-                Pixel.setPosition(x_cords[i], y_cords[i]);
-                Pixel.setFillColor(sf::Color::Black);
-                int n = iters[i];
-                if (n < MAX_ITER) {
-                    Pixel.setFillColor(sf::Color((BYTE)n * 30, (BYTE) n * 5, (BYTE) 255 - n));
-                }
-                if (DRAW)
-                    window.draw(Pixel);
-            }   
+            if (DRAW) {
+                for (int i = 0; i < 8; i++) {
+                    sf::Color color; 
+                    int n = iters[i];
+                    if (n < MAX_ITER) {
+                        color = sf::Color((BYTE)n * 30, (BYTE) n * 5, (BYTE) 255 - n);
+                    } else {
+                        color = sf::Color::Black;
+                    }
+                    image.setPixel(x_cords[i], y_cord, color);
+                } 
+            } 
         }
     }
 }

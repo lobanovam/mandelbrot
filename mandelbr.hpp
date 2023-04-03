@@ -4,8 +4,8 @@
 #include <math.h>
 #include <immintrin.h>
 
-void DrawMandlbr(sf::RenderWindow &window, float center_x, float center_y);
-void AVXDrawMandlbr(sf::RenderWindow &window, float center_x, float center_y);
+void DrawMandlbr(sf::Image &image, float center_x, float center_y);
+void AVXDrawMandlbr(sf::Image &image, float center_x, float center_y);
 sf::Text *SetText (sf::Font &font, float x_coord, float y_coord);
 
 const int W_HEIGHT = 1000;
