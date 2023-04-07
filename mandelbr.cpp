@@ -3,6 +3,7 @@
 #define AVX 1
 #define DRAW 1
 
+
 int main() {
     sf::RenderWindow window(sf::VideoMode(W_HEIGHT, W_WIDTH), "Mandelbrot");
     float cent_x = 0.0, cent_y = 0.0;
@@ -110,24 +111,23 @@ void DrawMandlbr(sf::Image &image, float center_x, float center_y) {
                 y = xy + xy + y0;
             }
 
-            if (DRAW) {
-                sf::Color color; 
-                if (cur_iter < MAX_ITER) {
-                    color = sf::Color((BYTE)cur_iter * 30, (BYTE) cur_iter * 5, (BYTE) 255 - cur_iter);
-                } else {
-                    color = sf::Color::Black;
-                }
+            
+            sf::Color color; 
+            if (cur_iter < MAX_ITER) {
+                color = sf::Color((BYTE)cur_iter * 30, (BYTE) cur_iter * 5, (BYTE) 255 - cur_iter);
+            } else {
+                color = sf::Color::Black;
+            }
+            if (DRAW) 
                 image.setPixel(x0_pix, y0_pix, color);
-            } 
+            
         }
     }
 }
 
-void AVXDrawMandlbr(sf::Image &image, float center_x, float center_y) {
-    __m256 max_dist = _mm256_set1_ps (MAX_DISTANCE);
-    __m256i i_x_shifts = _mm256_set_epi32 (7, 6, 5, 4, 3, 2, 1, 0);
-    __m256 f_x_shifts = _mm256_set_ps (7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
 
+void AVXDrawMandlbr(sf::Image &image, float center_x, float center_y) {
+    
     __m256 dy_arr = _mm256_set1_ps (dy);
     __m256 dx_arr = _mm256_set1_ps (dx);
 
@@ -144,7 +144,7 @@ void AVXDrawMandlbr(sf::Image &image, float center_x, float center_y) {
         __m256 y0_arr = _mm256_sub_ps (y_max_arr,  _mm256_mul_ps(f_y_pos, dy_arr));  // float y0 = y_max - (float)y0_pix * dy;                
         
         for (int x0_pix = 0; x0_pix < W_WIDTH; x0_pix += 8) {
-            //printf("x0_pix is %d\n", x0_pix);
+
             __m256i x_pos = _mm256_add_epi32 (_mm256_set1_epi32 (x0_pix), i_x_shifts);   // (x0, x0 + 1, ... , x0 + 7)
             __m256 f_x_pos = _mm256_add_ps (_mm256_set1_ps ((float)x0_pix), f_x_shifts);  // (float) (x0, x0 + 1, ... , x0 + 7)
             __m256 x0_arr = _mm256_add_ps (_mm256_mul_ps(f_x_pos, dx_arr), x_min_arr); //  float x0 = (float) x0_pix * dx + x_min     
@@ -176,22 +176,17 @@ void AVXDrawMandlbr(sf::Image &image, float center_x, float center_y) {
             u_int32_t* x_cords = (u_int32_t*) &x_pos;
             u_int32_t  y_cord  = * (u_int32_t*) &y_pos;
             int* iters   = (int*) &cur_iters;
-            if (DRAW) {
-                for (int i = 0; i < 8; i++) {
-                    sf::Color color; 
-                    int n = iters[i];
-                    //printf("n is %d\n", n);
-                    //getchar();
-                    if (n < MAX_ITER) {
-                        color = sf::Color((BYTE)n * 30, (BYTE) n * 5, (BYTE) 255 - n);
-                    } else {
-                        color = sf::Color::Black;
-                    }
-                    //printf("x_cords: %d, y_cord: %d\n", x_cords[i], y_cord);
-                    //getchar();
-                    
+            
+            for (int i = 0; i < 8; i++) {
+                sf::Color color; 
+                int n = iters[i];
+                if (n < MAX_ITER) {
+                    color = sf::Color((BYTE)n * 30, (BYTE) n * 5, (BYTE) 255 - n);
+                } else {
+                    color = sf::Color::Black;
+                }
+                if (DRAW) 
                     image.setPixel(x_cords[i], y_cord, color);
-                } 
             }
         }
     }

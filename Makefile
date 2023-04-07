@@ -1,5 +1,5 @@
 all:
-	g++ -mavx2 -Ofast -c mandelbr.cpp -o mandelbr.o 
+	g++ -mavx2  -Ofast -c mandelbr.cpp -o mandelbr.o 
 	g++ mandelbr.o -o sfml-app -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
 	./sfml-app
 
