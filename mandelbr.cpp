@@ -1,9 +1,7 @@
 #include "mandelbr.hpp"
 
-#define AVX 0
+#define AVX 1
 #define DRAW 1
-
-__m256 max_dist = _mm256_set1_ps (MAX_DISTANCE);
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(W_HEIGHT, W_WIDTH), "Mandelbrot");
@@ -68,10 +66,10 @@ int main() {
         sf::Time elapsed_time = clock.getElapsedTime();
 
         char textFPS[20];
-        sprintf (textFPS, "FPS: %.2f\n", 1/elapsed_time.asSeconds());
+        sprintf (textFPS, "FPS: %.2f", 1/elapsed_time.asSeconds());
 
         char textSCROLL[20];
-        sprintf (textSCROLL, "Scroll Scale: %.3f\n", scrollScale);
+        sprintf (textSCROLL, "Scroll Scale: %.3f", scrollScale);
 
         window.clear(sf::Color::Black);
 
@@ -91,13 +89,12 @@ int main() {
 }
 
 void DrawMandlbr(sf::Image &image, float center_x, float center_y) {
-    
-    float y_min = -y_brdr - center_y, y_max = y_brdr - center_y;
-    float x_min = -x_brdr - center_x, x_max = x_brdr - center_x;
-    for (int y0_pix = 0; y0_pix <= W_HEIGHT; y0_pix++) {
+    float y_max = y_brdr - center_y;
+    float x_min = -x_brdr - center_x;
+    for (int y0_pix = 0; y0_pix < W_HEIGHT; y0_pix++) {
         float y0 = y_max - (float)y0_pix * dy; 
         
-        for (int x0_pix = 0; x0_pix <= W_WIDTH; x0_pix++) {
+        for (int x0_pix = 0; x0_pix < W_WIDTH; x0_pix++) {
             float x0 = (float) x0_pix * dx + x_min;
     
             int cur_iter = 0;
@@ -127,6 +124,7 @@ void DrawMandlbr(sf::Image &image, float center_x, float center_y) {
 }
 
 void AVXDrawMandlbr(sf::Image &image, float center_x, float center_y) {
+    __m256 max_dist = _mm256_set1_ps (MAX_DISTANCE);
     __m256i i_x_shifts = _mm256_set_epi32 (7, 6, 5, 4, 3, 2, 1, 0);
     __m256 f_x_shifts = _mm256_set_ps (7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
 
@@ -139,13 +137,14 @@ void AVXDrawMandlbr(sf::Image &image, float center_x, float center_y) {
     __m256 x_min_arr = _mm256_set1_ps (x_min);
 
 
-    for (int y0_pix = 0; y0_pix <= W_HEIGHT; y0_pix++) {
+    for (int y0_pix = 0; y0_pix < W_HEIGHT; y0_pix++) {
         __m256i y_pos = _mm256_set1_epi32 (y0_pix);                   //(y0, ... , y0)
         __m256 f_y_pos = _mm256_set1_ps ((float) y0_pix);      // (float) (y0, ... , y0)
 
         __m256 y0_arr = _mm256_sub_ps (y_max_arr,  _mm256_mul_ps(f_y_pos, dy_arr));  // float y0 = y_max - (float)y0_pix * dy;                
         
-        for (int x0_pix = 0; x0_pix + 8 <= W_WIDTH; x0_pix += 8) {
+        for (int x0_pix = 0; x0_pix < W_WIDTH; x0_pix += 8) {
+            //printf("x0_pix is %d\n", x0_pix);
             __m256i x_pos = _mm256_add_epi32 (_mm256_set1_epi32 (x0_pix), i_x_shifts);   // (x0, x0 + 1, ... , x0 + 7)
             __m256 f_x_pos = _mm256_add_ps (_mm256_set1_ps ((float)x0_pix), f_x_shifts);  // (float) (x0, x0 + 1, ... , x0 + 7)
             __m256 x0_arr = _mm256_add_ps (_mm256_mul_ps(f_x_pos, dx_arr), x_min_arr); //  float x0 = (float) x0_pix * dx + x_min     
