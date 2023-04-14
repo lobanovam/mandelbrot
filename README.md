@@ -1,6 +1,7 @@
 # Mandelbrot set
 
-<img src="img/.jpg">
+<img src="img/photo_2023-04-14_22-29-09.jpg">
+
 
 
 ## Introduction
@@ -115,3 +116,6 @@ Speed growth factor k = $\frac{FPS_{AVX}}{FPS_{NO-AVX}}$
 As we can see, the best speed growth factor with the same flags was achieved with "-O3" flag (4.302).
 
 The best FPS was achieved with AVX and "-Ofast" flag. Speed growth factor here is 3.98.
+
+<img src="img/photo_2023-04-14_22-32-50.jpg">
+<img src="img/photo_2023-04-14_22-33-09.jpg">
