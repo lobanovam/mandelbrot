@@ -1,4 +1,3 @@
-# mandelbrot
 # Mandelbrot set
 
 ## Introduction
@@ -9,19 +8,27 @@ The goal is to draw a mandelbrot set and optimize it using SIMD instructions.
 For visualization we will use SFML library.
 
 ## About Mandelbrot set
-The Mandelbrot set is the set of complex numbers {\displaystyle c}c for which the function {\displaystyle f_{c}(z)=z^{2}+c}{\displaystyle f_{c}(z)=z^{2}+c} does not diverge to infinity when iterated from {\displaystyle z=0}z=0, i.e., for which the sequence {\displaystyle f_{c}(0)}{\displaystyle f_{c}(0)}, {\displaystyle f_{c}(f_{c}(0))}{\displaystyle f_{c}(f_{c}(0))}, etc., remains bounded in absolute value.
-
-
-
+The Mandelbrot set is the set of complex numbers ${\displaystyle c}$ for which the function ${\displaystyle f_{c}(z)=z^{2}+c}$ does not diverge to infinity when iterated from ${\displaystyle z=0}$, i.e., for which the sequence ${\displaystyle f_{c}(0)}$, ${\displaystyle f_{c}(f_{c}(0))}$ etc., remains bounded in absolute value.
 
 
 For more detailed information please visit the link below: \
 https://en.wikipedia.org/wiki/Mandelbrot_set
 
+## Math behind it
+We have a plane with x and y coordinats. For each dot (pixel) on the plane we calculate a sequence according to the following algorithm:
+- $x_{n+1} = x_n^2 - y_n^2 + x_0$
+- $y_{n+1} = 2 \cdot x_n \cdot y_n + y_0$
+
+We stop calculating as soon as we reach 50 iterations or $x_{n}^2 + y_{n}^2 > MaxDistance^2$
+
+In our case $MaxDistance = 10$
+
+Color of each pixel depends on how much iterations were made before stopping. \ 
+
+
+
 ## Basic implementation
-
-Let's just use the given Alpha Blending formula for each couple of pixels independently.
-
+Let's just code given algorithm for each pixel individually.
 ~~~C++
 
 ~~~
