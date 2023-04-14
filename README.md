@@ -27,7 +27,7 @@ We stop calculating as soon as we reach 50 iterations or $x_{n}^2 + y_{n}^2 > Ma
 
 In our case $MaxDistance = 10$
 
-Color of each pixel depends on how much iterations were made before stopping. \ 
+Color of each pixel depends on how much iterations were made before stopping.  
 
 
 
