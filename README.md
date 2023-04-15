@@ -6,7 +6,7 @@
 
 ## Introduction
 
-This projects is part of I.R.Dedinskiy programming course (1st year MIPT DREC). \
+This projects is part of I.R. Dedinskiy programming course (1st year MIPT DREC). \
 The goal is to draw a mandelbrot set and optimize it using SIMD instructions.
 
 For visualization we will use SFML library.
@@ -19,7 +19,7 @@ For more detailed information please visit the link below: \
 https://en.wikipedia.org/wiki/Mandelbrot_set
 
 ## Math behind it
-We have a plane with x and y coordinats. For each dot (pixel) on the plane we calculate a sequence according to the following algorithm:
+We have a plane with x and y coordinats. For each dot (pixel) with coordinates ($x_0, y_0$) on the plane we calculate a sequence according to the following algorithm:
 - $x_{n+1} = x_n^2 - y_n^2 + x_0$
 - $y_{n+1} = 2 \cdot x_n \cdot y_n + y_0$
 
@@ -27,8 +27,12 @@ We stop calculating as soon as we reach 50 iterations or $x_{n}^2 + y_{n}^2 > Ma
 
 In our case $MaxDistance = 10$
 
-Color of each pixel depends on how much iterations were made before stopping.  
+Color of each pixel depends on how much iterations were made before stopping.
+I decided to stick with following formula:
 
+$(R, G, B) = (n \cdot 30, \text{ } n \cdot 5, \text{ } 255 - n)$
+
+where n is amount of iterations for current pixel. 
 
 
 ## Basic implementation
@@ -50,7 +54,7 @@ for ( ; cur_iter < MAX_ITER; cur_iter++) {
 
 ## Optimisation ideas
 
-Our calculations for each pixel are absolutely the same and completely independent. So why don't we calculate the resultaing colors for several pixels simultaneously?
+Our calculations for each pixel are absolutely the same and completely independent. So why don't we calculate the resulting colors for several pixels simultaneously?
 Here the SIMD instructions come to the rescue. If you are not familiar with SIMD, check the following link: \
 https://en.wikipedia.org/wiki/Single_instruction,_multiple_data \
 For complete list of SIMD instructions check \
@@ -101,7 +105,7 @@ FPS (frames per second) for each tested configuration.
 | -O3      | 12.6        | 54.2     |
 | -Ofast   | 14.1        | 56.1     |
 
-Speed growth factor k = $\frac{FPS_{AVX}}{FPS_{NO-AVX}}$
+Speed growth factor $k_1$ = $\frac{FPS_{AVX}}{FPS_{NO-AVX}}$
 
 
 | AVX\NOAVX | no flags  | -O1  | -O2  | -O3  | -Ofast |
@@ -113,9 +117,27 @@ Speed growth factor k = $\frac{FPS_{AVX}}{FPS_{NO-AVX}}$
 | -Ofast    | 10.79     | 4.25 | 4.45 | 4.45 | 3.98   |
 
 
-As we can see, the best speed growth factor with the same flags was achieved with "-O3" flag (4.302).
+As we can see, the best speed growth factor $k_1$ with the same flags was achieved with "-O3" flag (4.302).
 
 The best FPS was achieved with AVX and "-Ofast" flag. Speed growth factor here is 3.98.
+
+Speed growth factor $k_2$ = $\frac{FPS_{flag}}{FPS_{no-flag}}$
+
+| flags    | NO AVX, $k_2$ | AVX, $k_2$ |
+|----------|---------------|------------|
+| no flags | 1             | 1          |
+| -O1      | 2.54          | 3.71       |
+| -O2      | 2.42          | 3.71       |
+| -O3      | 2.42          | 3.71       |
+| -Ofast   | 2.71          | 3.84       |
+
+As we can see, the best speed growth factor $k_2$ for NO_AVX is 2.71 (with "-Ofast"). In the same time $k_1$ for "-Ofast" is 3.98.
+
+
+## Conclusion
+
+We have reached the highest performance combining SIMD instructions and compiler optimization.
+Now take a look at some beautiful shots :)  
 
 <img src="img/photo_2023-04-14_22-32-50.jpg">
 <img src="img/photo_2023-04-14_22-33-09.jpg">
